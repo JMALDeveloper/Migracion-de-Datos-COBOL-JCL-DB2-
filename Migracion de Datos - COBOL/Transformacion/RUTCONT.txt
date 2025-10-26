@@ -1,0 +1,177 @@
+      ******************************************************************
+      *       I D E N T I FI C A T I O N   D I V I S I O N
+      *   RUTINA DE CONTRAVALORACION PARA EL PROGRAMA 'TRASEGM'
+      ******************************************************************
+       IDENTIFICATION DIVISION.
+      *
+       PROGRAM-ID.    RUTCONT.
+       AUTHOR.        JOAQUIN ALPANYEZ LOPEZ.
+       DATE-WRITTEN.  20/09/2023.
+       DATE-COMPILED. 20/09/2023.
+      *
+      ******************************************************************
+      *       E N V I R O N M E N T     D I V I S I O N
+      ******************************************************************
+       ENVIRONMENT DIVISION.
+      *
+       CONFIGURATION SECTION.
+         SOURCE-COMPUTER.  IBM-3090.
+         OBJECT-COMPUTER.  IBM-3090.
+      *
+       SPECIAL-NAMES.
+           DECIMAL-POINT IS COMMA.
+      *
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+      ******************************************************************
+      *                D A T A      D I V I S I O N
+      ******************************************************************
+       DATA DIVISION.
+      *
+       FILE SECTION.
+      *
+      ******************************************************************
+      *        F I L E     S E C T I O N
+      ******************************************************************
+      *
+      ******************************************************************
+      *        W O R K I N G    S T O R A G E
+      ******************************************************************
+       WORKING-STORAGE SECTION.
+      **********************-CONSTANTES-********************************
+       01 CA-CONSTANTES-ALF.
+          05 CA-PGM                       PIC X(08) VALUE 'RUTCONT'.
+          05 CA-00                        PIC X(02) VALUE '00'.
+          05 CA-10                        PIC X(02) VALUE '10'.
+          05 CA-SI                        PIC X(2)  VALUE 'SI'.
+          05 CA-NO                        PIC X(2)  VALUE 'NO'.
+      *
+       01 DIFERENCIA                      PIC 9(01)V9(02) VALUE 0,97.
+      ******************************************************************
+       LINKAGE SECTION.
+      ****************-ESTRUCTURACOMUNICACIONPROGRAMA-******************
+       01 CPYCOMCONT.
+          05 ENTRADA.
+             10 IMPORT-ORIG               PIC 9(15)V9(02).
+             10 DIV-ORIG                  PIC X(03).
+          05 SALIDA.
+             10 IMPORT-DEST               PIC 9(15)V9(02).
+             10 DIV-DEST                  PIC X(03).
+          05 ERRORES.
+             10 RETORNO                   PIC X(02).
+             10 SUBRETORNO                PIC X(02).
+             10 TABLA                     PIC X(20).
+             10 PARRAFO                   PIC X(30).
+             10 ACCION                    PIC X(10).
+             10 SQLCODE                   PIC S9(04) COMP.
+             10 RUTINA                    PIC X(08).
+      ******************************************************************
+      *        P R O C E D U R E     D I V I S I O N
+      ******************************************************************
+       PROCEDURE DIVISION USING CPYCOMCONT.
+      *
+           PERFORM 1000-INICIO
+              THRU 1000-INICIO-EXIT
+      *
+           PERFORM 2000-PROCESO
+              THRU 2000-PROCESO-EXIT
+      *
+           PERFORM 3000-FIN
+              THRU 3000-FIN-EXIT.
+      *
+      ******************************************************************
+      *   1000-INICIO
+      ******************************************************************
+       1000-INICIO.
+      *
+               INITIALIZE
+                          ERRORES
+      *
+               MOVE CA-00 TO RETORNO
+      *
+               PERFORM 1100-VALIDAR-ENTRADA
+                  THRU 1100-VALIDAR-ENTRADA-EXIT
+      *
+           .
+       1000-INICIO-EXIT.
+           EXIT.
+      ******************************************************************
+       1100-VALIDAR-ENTRADA.
+      *
+                   IF IMPORT-ORIG EQUAL ZEROES
+      *
+                      MOVE '88'                   TO RETORNO
+                      MOVE 'IMPORTE VACIO'        TO TABLA
+                      MOVE '1100-VALIDAR-ENTRADA' TO PARRAFO
+                      MOVE 'SEL IMPORTE'          TO ACCION
+                      MOVE  CA-PGM                TO RUTINA
+      *
+                      DISPLAY ERRORES
+      *
+                   ELSE
+      *
+                      MOVE '00'                   TO RETORNO
+                      MOVE 'IMPORTE CORRECTO'     TO TABLA
+                      MOVE '1100-VALIDAR-ENTRADA' TO PARRAFO
+                      MOVE 'INT IMPORTE'          TO ACCION
+                      MOVE  CA-PGM                TO RUTINA
+      *
+                      DISPLAY ERRORES
+      *
+                   END-IF
+      *
+      *
+      *
+                   IF DIV-ORIG EQUAL SPACES OR LOW-VALUES
+      *
+                      MOVE '88'                   TO RETORNO
+                      MOVE 'DIVISA VACIA'         TO TABLA
+                      MOVE '1100-VALIDAR-ENTRADA' TO PARRAFO
+                      MOVE 'SEL DIVISA'           TO ACCION
+                      MOVE  CA-PGM                TO RUTINA
+      *
+                      DISPLAY ERRORES
+      *
+                   ELSE
+      *
+                      MOVE '00'                   TO RETORNO
+                      MOVE 'DIVISA CORRECTA'      TO TABLA
+                      MOVE '1100-VALIDAR-ENTRADA' TO PARRAFO
+                      MOVE 'INT DIVISA'           TO ACCION
+                      MOVE  CA-PGM                TO RUTINA
+      *
+                      DISPLAY ERRORES
+      *
+                   END-IF
+      *
+                .
+       1100-VALIDAR-ENTRADA-EXIT.
+               EXIT.
+      ******************************************************************
+      *   2000-PROCESO
+      ******************************************************************
+       2000-PROCESO.
+      *
+      ************************CONVERSION DIVISA*************************
+                  IF DIV-ORIG = 'EUR'
+                     MOVE 'USD' TO DIV-DEST
+                  END-IF
+      ************************CONVERSION IMPORTE************************
+                        COMPUTE IMPORT-DEST = IMPORT-ORIG * DIFERENCIA
+      *
+           .
+       2000-PROCESO-EXIT.
+           EXIT.
+      ******************************************************************
+      **************************************************************
+      *   3000-FIN
+      ******************************************************************
+       3000-FIN.
+      *
+           GOBACK
+      *
+           .
+      *
+       3000-FIN-EXIT.
+           EXIT.
+      ******************************************************************

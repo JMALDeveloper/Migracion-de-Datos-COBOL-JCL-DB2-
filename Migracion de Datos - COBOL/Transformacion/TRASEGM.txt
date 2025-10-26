@@ -1,0 +1,492 @@
+      ******************************************************************
+      *       I D E N T I F I C A T I O N   D I V I S I O N
+      *
+      * PROGRAMA PARA TRANSFORMACION DE FICHERO:
+      * DES.VAL.CLI.NMAPFRE.F280519 (CLIENTES_PEPITO_SEG)
+      * RUTINA DE AGENTES AÑADIDA: RUTAGEN
+      * TRANSFORMACION A 2 FORMATOS:
+      * DES.TRANS.CLI.MAP.F300519 (CLIENTES MAPFRE)
+      * DES.TRANS.AGE.MAP.F300519 (AGENTES MAPFRE)
+      ******************************************************************
+       IDENTIFICATION DIVISION.
+      *
+       PROGRAM-ID.    TRASEGM.
+       AUTHOR.        JOAQUIN ALPANYEZ LOPEZ.
+       DATE-WRITTEN.  19/09/2023.
+       DATE-COMPILED. 19/09/2023.
+      *
+      ******************************************************************
+      *       E N V I R O N M E N T     D I V I S I O N
+      ******************************************************************
+       ENVIRONMENT DIVISION.
+      *
+       CONFIGURATION SECTION.
+         SOURCE-COMPUTER.  IBM-3090.
+         OBJECT-COMPUTER.  IBM-3090.
+      *
+       SPECIAL-NAMES.
+           DECIMAL-POINT IS COMMA.
+      *
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT FENTRADA
+               ASSIGN TO ENTRADA
+               FILE STATUS IS FS-FENTRADA.
+      *
+           SELECT FSALIDA
+               ASSIGN TO SALIDA
+               FILE STATUS IS FS-FSALIDA.
+      *
+           SELECT FSALIDA2
+               ASSIGN TO SALIDA2
+               FILE STATUS IS FS-FSALIDA2.
+      *
+      *
+      ******************************************************************
+      *                D A T A      D I V I S I O N
+      ******************************************************************
+       DATA DIVISION.
+      *
+       FILE SECTION.
+      *
+      ******************************************************************
+      *        F I L E     S E C T I O N
+      ******************************************************************
+      *
+       FD  FENTRADA
+           BLOCK CONTAINS 0 RECORDS
+           LABEL RECORD ARE STANDARD
+           RECORDING MODE IS F
+           DATA RECORD IS REG-ENT.
+
+       01  REG-ENT            PIC X(1068).
+      *
+       FD  FSALIDA
+           BLOCK CONTAINS 0 RECORDS
+           LABEL RECORD ARE STANDARD
+           RECORDING MODE IS F
+           DATA RECORD IS REG-SAL.
+
+       01  REG-SAL            PIC X(469).
+      *
+       FD  FSALIDA2
+           BLOCK CONTAINS 0 RECORDS
+           LABEL RECORD ARE STANDARD
+           RECORDING MODE IS F
+           DATA RECORD IS REG-SAL2.
+
+       01  REG-SAL2           PIC X(112).
+      *
+      *
+      ******************************************************************
+      *        W O R K I N G    S T O R A G E
+      ******************************************************************
+       WORKING-STORAGE SECTION.
+      **************************-CONSTANTES-****************************
+       01 CA-CONSTANTES-ALF.
+          05 CA-PGM                       PIC X(08) VALUE 'TRASEGM'.
+          05 CA-RUT1                      PIC X(08) VALUE 'RUTAGEN'.
+          05 CA-00                        PIC X(02) VALUE '00'.
+          05 CA-10                        PIC X(02) VALUE '10'.
+      *
+       01 CN-CONSTANTES-NUM.
+          05 CN-1                         PIC 9(01) VALUE 1.
+      ************************-VARIABLES-*******************************
+       01 WK-VARIABLES.
+          05 WK-LEIDOS                    PIC 9(03) VALUE 000.
+          05 WK-ESCRITOS                  PIC 9(03) VALUE 000.
+          05 WK-ESCRITOS2                 PIC 9(03) VALUE 000.
+      *
+       01 FS-FILE-STATUS.
+          05 FS-FENTRADA                  PIC X(02).
+          05 FS-FSALIDA                   PIC X(02).
+          05 FS-FSALIDA2                  PIC X(02).
+      *
+      ********************-ESTRUCTURAS-*********************************
+       01 CPYENT1.
+          05 DNI-CL-E1                   PIC X(9).
+          05 ID-E1                       PIC S9(9).
+          05 NUMERO-POLIZA-E1            PIC X(09).
+          05 NOMBRE-COMPANYA-E1          PIC X(55).
+          05 TIPO-E1                     PIC X(02).
+          05 FECHA-INICIO-E1             PIC X(10).
+          05 FECHA-VENCIMIENTO-E1        PIC X(10).
+          05 COND-PART-E1                PIC X(255).
+          05 OBSERVACIONES1-E1           PIC X(255).
+          05 NOMBRE-CL-E1                PIC X(25).
+          05 APELLIDO-1-E1               PIC X(25).
+          05 APELLIDO-2-E1               PIC X(25).
+          05 CLASE-VIA-E1                PIC X(25).
+          05 NOMBRE-VIA-E1               PIC X(55).
+          05 NUMERO-VIA-E1               PIC S9(9).
+          05 COD-POSTAL-E1               PIC X(5).
+          05 CIUDAD-E1                   PIC X(25).
+          05 TELEFONO-E1                 PIC X(10).
+          05 OBSERVACIONES2-E1           PIC X(255).
+      *
+       01 CPYSAL1.
+          05 DNI-S1                       PIC X(09).
+          05 NOMBRE-S1                    PIC X(75).
+          05 DIRECCION-S1                 PIC X(120).
+          05 TELEFONO-S1                  PIC X(10).
+          05 OBSERVACIONES-S1             PIC X(255).
+      *
+       01 CPYSAL2.
+          05 NUM-AGE-S2                   PIC X(09).
+          05 DNI-AGE-S2                   PIC X(09).
+          05 NOMBRE-AGE-S2                PIC X(25).
+          05 APE1-AGE-S2                  PIC X(25).
+          05 APE2-AGE-S2                  PIC X(25).
+          05 TLFN-AGE-S2                  PIC X(10).
+          05 DNI-CL-S2                    PIC X(09).
+      *
+       01 CPYCOMSS2.
+             10 NUM-ALE-SS2               PIC 9(01).
+             10 NUM-AGE-SS2               PIC X(09).
+             10 DNI-AGE-SS2               PIC X(09).
+             10 NOMBRE-AGE-SS2            PIC X(25).
+             10 APE1-AGE-SS2              PIC X(25).
+             10 APE2-AGE-SS2              PIC X(25).
+             10 TLFN-AGE-SS2              PIC X(10).
+      ************************-SWITCHES-********************************
+       01 SWITCHES.
+          05 SW-ERROR                     PIC X(01) VALUE 'N'.
+             88 SI-ERROR                            VALUE 'S'.
+             88 NO-ERROR                            VALUE 'N'.
+      *
+          05 SW-FIN-FICHERO               PIC X(01) VALUE 'N'.
+             88 SI-FIN-FICHERO                      VALUE 'S'.
+             88 NO-FIN-FICHERO                      VALUE 'N'.
+      *
+      ******************************************************************
+      *        P R O C E D U R E     D I V I S I O N
+      ******************************************************************
+       PROCEDURE DIVISION.
+      *
+           PERFORM 1000-INICIO
+              THRU 1000-INICIO-EXIT
+      *
+           PERFORM 2000-PROCESO
+              THRU 2000-PROCESO-EXIT
+             UNTIL SI-FIN-FICHERO
+      *
+           PERFORM 3000-FIN
+              THRU 3000-FIN-EXIT.
+      *
+      ******************************************************************
+      *   1000-INICIO
+      ******************************************************************
+       1000-INICIO.
+      *
+           INITIALIZE WK-VARIABLES
+                      FS-FILE-STATUS
+                      CPYENT1
+                      CPYSAL1
+                      CPYSAL2
+                      CPYCOMSS2
+      *
+           SET NO-ERROR              TO TRUE
+           SET NO-FIN-FICHERO        TO TRUE
+      *
+           PERFORM 1050-ABRIR-ENTRADA
+              THRU 1050-ABRIR-ENTRADA-EXIT
+      *
+           PERFORM 1100-ABRIR-SALIDA
+              THRU 1100-ABRIR-SALIDA-EXIT
+      *
+           PERFORM 9000-LEER-ENTRADA
+              THRU 9000-LEER-ENTRADA-EXIT
+      *
+           .
+       1000-INICIO-EXIT.
+           EXIT.
+      ******************************************************************
+      *   1050-ABRIR-ENTRADA
+      ******************************************************************
+       1050-ABRIR-ENTRADA.
+      *
+           OPEN INPUT FENTRADA
+      *
+           IF FS-FENTRADA = CA-00
+              CONTINUE
+           ELSE
+              SET SI-ERROR          TO TRUE
+      *
+              PERFORM 3000-FIN
+                 THRU 3000-FIN-EXIT
+      *
+           END-IF
+      *
+           .
+       1050-ABRIR-ENTRADA-EXIT.
+           EXIT.
+      ******************************************************************
+      *   1100-ABRIR-SALIDA
+      ******************************************************************
+       1100-ABRIR-SALIDA.
+      *
+           OPEN OUTPUT FSALIDA
+      *
+           IF FS-FSALIDA = CA-00
+              CONTINUE
+           ELSE
+              SET SI-ERROR          TO TRUE
+      *
+              PERFORM 3000-FIN
+                 THRU 3000-FIN-EXIT
+      *
+           END-IF
+      *
+           OPEN OUTPUT FSALIDA2
+      *
+           IF FS-FSALIDA2 = CA-00
+              CONTINUE
+           ELSE
+              SET SI-ERROR          TO TRUE
+      *
+              PERFORM 3000-FIN
+                 THRU 3000-FIN-EXIT
+      *
+           END-IF
+      *
+      *
+           .
+       1100-ABRIR-SALIDA-EXIT.
+           EXIT.
+      ******************************************************************
+      *   2000-PROCESO
+      ******************************************************************
+       2000-PROCESO.
+      *
+                     PERFORM 2222-STRINGS
+                        THRU 2222-STRINGS-EXIT
+      *
+                     PERFORM 2500-INFORMAR-SALIDA1
+                        THRU 2500-INFORMAR-SALIDA1-EXIT
+      *
+                     PERFORM 2300-ESCRIBIR-SALIDA
+                        THRU 2300-ESCRIBIR-SALIDA-EXIT
+      *
+                     PERFORM 2888-INFOR-RUTINA-AGEN
+                        THRU 2888-INFOR-RUTINA-AGEN-EXIT
+      *
+                     PERFORM 2333-LLAMAR-RUTINA-AGEN
+                        THRU 2333-LLAMAR-RUTINA-AGEN-EXIT
+      *
+                     PERFORM 2600-INFORMAR-SALIDA2
+                        THRU 2600-INFORMAR-SALIDA2-EXIT
+      *
+                     PERFORM 2450-ESCRIBIR-SALIDA2
+                        THRU 2450-ESCRIBIR-SALIDA2-EXIT
+      *
+                     PERFORM 9000-LEER-ENTRADA
+                        THRU 9000-LEER-ENTRADA-EXIT
+      *
+           .
+       2000-PROCESO-EXIT.
+           EXIT.
+      ******************************************************************
+       2888-INFOR-RUTINA-AGEN.
+      *
+               INITIALIZE NUM-ALE-SS2
+      *
+               MOVE DNI-CL-E1(4:1) TO NUM-ALE-SS2
+      *
+               .
+       2888-INFOR-RUTINA-AGEN-EXIT.
+              EXIT.
+      ******************************************************************
+       2222-STRINGS.
+      *
+             STRING NOMBRE-CL-E1 APELLIDO-1-E1 APELLIDO-2-E1
+             DELIMITED BY SIZE INTO NOMBRE-S1
+      *
+             STRING CLASE-VIA-E1 NOMBRE-VIA-E1 NUMERO-VIA-E1
+                    COD-POSTAL-E1 CIUDAD-E1
+             DELIMITED BY SIZE INTO DIRECCION-S1
+      *
+              .
+       2222-STRINGS-EXIT.
+             EXIT.
+      ******************************************************************
+       2333-LLAMAR-RUTINA-AGEN.
+      *
+               CALL CA-RUT1 USING CPYCOMSS2
+      *
+                  .
+       2333-LLAMAR-RUTINA-AGEN-EXIT.
+            EXIT.
+      ******************************************************************
+       2500-INFORMAR-SALIDA1.
+      *
+                 MOVE DNI-CL-E1         TO DNI-S1
+                 MOVE TELEFONO-E1       TO TELEFONO-S1
+                 MOVE OBSERVACIONES2-E1 TO OBSERVACIONES-S1
+      *
+               .
+       2500-INFORMAR-SALIDA1-EXIT.
+                EXIT.
+      ******************************************************************
+       2600-INFORMAR-SALIDA2.
+      *
+                 MOVE NUM-AGE-SS2    TO NUM-AGE-S2
+                 MOVE DNI-AGE-SS2    TO DNI-AGE-S2
+                 MOVE NOMBRE-AGE-SS2 TO NOMBRE-AGE-S2
+                 MOVE APE1-AGE-SS2   TO APE1-AGE-S2
+                 MOVE APE2-AGE-SS2   TO APE2-AGE-S2
+                 MOVE TLFN-AGE-SS2   TO TLFN-AGE-S2
+                 MOVE DNI-CL-E1      TO DNI-CL-S2
+      *
+               .
+       2600-INFORMAR-SALIDA2-EXIT.
+                EXIT.
+      ******************************************************************
+      *   2300-ESCRIBIR-SALIDA
+      ******************************************************************
+       2300-ESCRIBIR-SALIDA.
+      *
+           WRITE REG-SAL FROM CPYSAL1
+      *
+           IF FS-FSALIDA = CA-00
+              ADD CN-1           TO WK-ESCRITOS
+              INITIALIZE CPYSAL1
+           ELSE
+              SET SI-ERROR       TO TRUE
+
+              PERFORM 3000-FIN
+                 THRU 3000-FIN-EXIT
+           END-IF
+      *
+           .
+      *
+       2300-ESCRIBIR-SALIDA-EXIT.
+           EXIT.
+      ******************************************************************
+       2450-ESCRIBIR-SALIDA2.
+      *
+           WRITE REG-SAL2 FROM CPYSAL2
+      *
+           IF FS-FSALIDA2 = CA-00
+              ADD CN-1           TO WK-ESCRITOS2
+              INITIALIZE CPYSAL2
+           ELSE
+              SET SI-ERROR       TO TRUE
+
+              PERFORM 3000-FIN
+                 THRU 3000-FIN-EXIT
+           END-IF
+      *
+           .
+      *
+       2450-ESCRIBIR-SALIDA2-EXIT.
+           EXIT.
+      ******************************************************************
+      ******************************************************************
+      *   3000-FIN
+      ******************************************************************
+       3000-FIN.
+      *
+           PERFORM 3100-CERRAR-FICHEROS
+              THRU 3100-CERRAR-FICHEROS-EXIT
+      *
+           IF NO-ERROR
+              PERFORM 3200-GRABAR-ESTADIS
+                 THRU 3200-GRABAR-ESTADIS-EXIT
+           ELSE
+              PERFORM 3300-GRABAR-ERROR
+                 THRU 3300-GRABAR-ERROR-EXIT
+           END-IF
+      *
+           STOP RUN
+      *
+           .
+      *
+       3000-FIN-EXIT.
+           EXIT.
+      ******************************************************************
+      *   3100-CERRAR-FICHEROS
+      ******************************************************************
+       3100-CERRAR-FICHEROS.
+      *
+           CLOSE FENTRADA
+                 FSALIDA
+                 FSALIDA2
+      *
+           IF FS-FENTRADA NOT = CA-00
+              SET SI-ERROR         TO TRUE
+           END-IF
+      *
+           IF FS-FSALIDA   NOT = CA-00
+              SET SI-ERROR         TO TRUE
+           END-IF
+      *
+           IF FS-FSALIDA2 NOT = CA-00
+              SET SI-ERROR         TO TRUE
+           END-IF
+      *
+      *
+           .
+      *
+       3100-CERRAR-FICHEROS-EXIT.
+           EXIT.
+      ******************************************************************
+      *   3200-GRABAR-ESTADIS
+      ******************************************************************
+       3200-GRABAR-ESTADIS.
+      *
+           DISPLAY '**************************************'
+           DISPLAY '*     ESTADISTICAS SALIDA            *'
+           DISPLAY '* REGISTROS LEIDOS   FE:     *' WK-LEIDOS
+           DISPLAY '* REGISTROS ESCRITOS FS:     *' WK-ESCRITOS
+           DISPLAY '* REGISTROS ESCRITOS FS:     *' WK-ESCRITOS2
+           DISPLAY '**************************************'
+      *
+           .
+      *
+       3200-GRABAR-ESTADIS-EXIT.
+           EXIT.
+      ******************************************************************
+      *   3300-GRABAR-ERROR
+      ******************************************************************
+       3300-GRABAR-ERROR.
+      *
+           DISPLAY '**************************************'
+           DISPLAY '*    SE HA PRODUCIDO UN ERROR        *'
+           DISPLAY '* FILE STATUS DEL    FE:     *' FS-FENTRADA
+           DISPLAY '* FILE STATUS DEL    FS:     *' FS-FSALIDA
+           DISPLAY '* FILE STATUS DEL    FS:     *' FS-FSALIDA2
+           DISPLAY '**************************************'
+      *
+           .
+      *
+       3300-GRABAR-ERROR-EXIT.
+           EXIT.
+      ******************************************************************
+      *   9000-LEER-ENTRADA
+      ******************************************************************
+       9000-LEER-ENTRADA.
+      *
+           INITIALIZE CPYENT1
+      *
+           READ FENTRADA INTO CPYENT1
+              AT END
+                 SET SI-FIN-FICHERO  TO TRUE
+           END-READ
+      *
+           IF FS-FENTRADA = CA-00
+              ADD CN-1               TO WK-LEIDOS
+           ELSE
+              IF FS-FENTRADA = CA-10
+                 DISPLAY 'HE LLEGADO AL FINAL DEL FICHERO'
+              ELSE
+                 SET SI-ERROR        TO TRUE
+
+                 PERFORM 3000-FIN
+                    THRU 3000-FIN-EXIT
+              END-IF
+           END-IF
+           .
+      *
+       9000-LEER-ENTRADA-EXIT.
+           EXIT.
+      ******************************************************************

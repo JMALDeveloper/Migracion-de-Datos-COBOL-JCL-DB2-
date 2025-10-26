@@ -1,0 +1,540 @@
+      ******************************************************************
+      *       I D E N T I F I C A T I O N   D I V I S I O N
+      *
+      * RUTINA DE LISTA/REPAGINACION PARA EL PROGRAMA 'EXTCLI'
+      *
+      ******************************************************************
+       IDENTIFICATION DIVISION.
+      *
+       PROGRAM-ID.    EXTRCLI.
+       AUTHOR.        JOAQUIN ALPANYEZ LOPEZ.
+       DATE-WRITTEN.  11/09/2023.
+       DATE-COMPILED. 11/09/2023.
+      *
+      ******************************************************************
+      *       E N V I R O N M E N T     D I V I S I O N
+      ******************************************************************
+       ENVIRONMENT DIVISION.
+      *
+       CONFIGURATION SECTION.
+         SOURCE-COMPUTER.  IBM-3090.
+         OBJECT-COMPUTER.  IBM-3090.
+      *
+       SPECIAL-NAMES.
+           DECIMAL-POINT IS COMMA.
+      *
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+      ******************************************************************
+      *                D A T A      D I V I S I O N
+      ******************************************************************
+       DATA DIVISION.
+      *
+       FILE SECTION.
+      *
+      ******************************************************************
+      *        F I L E     S E C T I O N
+      ******************************************************************
+      *
+      *
+      ******************************************************************
+      *        W O R K I N G    S T O R A G E
+      ******************************************************************
+       WORKING-STORAGE SECTION.
+      *
+       01 CA-CONSTANTES-ALF.
+          05 CA-PGM                       PIC X(08) VALUE 'EXTRCLI'.
+          05 CA-L                         PIC X(01) VALUE 'L'.
+          05 CA-R                         PIC X(01) VALUE 'R'.
+          05 CA-S                         PIC X(01) VALUE 'S'.
+          05 CA-N                         PIC X(01) VALUE 'N'.
+          05 CA-00                        PIC X(02) VALUE '00'.
+          05 CA-01                        PIC X(02) VALUE '01'.
+          05 CA-10                        PIC X(02) VALUE '10'.
+          05 CA-11                        PIC X(02) VALUE '11'.
+          05 CA-88                        PIC X(02) VALUE '88'.
+          05 CA-99                        PIC X(02) VALUE '99'.
+          05 CA-ACC-VALIDA PIC X(19) VALUE 'VALIDACION         '.
+          05 CA-ACC-OPEN   PIC X(19) VALUE 'OPEN CURSOR        '.
+          05 CA-ACC-FETCH  PIC X(19) VALUE 'FETCH CURSOR       '.
+          05 CA-ACC-CLOSE  PIC X(19) VALUE 'CLOSE CURSOR       '.
+          05 CA-TABLA      PIC X(19) VALUE 'EXTRCLI            '.
+          05 CA-PARR-VALOP PIC X(20) VALUE '1100-VALIDAR-OPCION '.
+          05 CA-PARR-VALNE PIC X(23) VALUE '1200-VALIDAR-NUM-ELEM-E'.
+          05 CA-PARR-ABRCL PIC X(23) VALUE '2100-ABRIR-CURSOR-LISTA'.
+          05 CA-PARR-ABRCR PIC X(23) VALUE '2400-ABRIR-CURSOR-REPAG'.
+          05 CA-PARR-LEECL PIC X(23) VALUE '2200-LEER-CURSOR-LISTA '.
+          05 CA-PARR-LEECR PIC X(23) VALUE '2500-LEER-CURSOR-REPAG '.
+          05 CA-PARR-CERCL PIC X(23) VALUE '2300-CERRAR-CURSOR-LIST'.
+          05 CA-PARR-CERCR PIC X(23) VALUE '2600-CERRAR-CURSOR-REPA'.
+      *
+       01 SWITCHES.
+          05 SW-FIN-CURSOR                PIC X(01).
+             88 SI-FIN-CURSOR             VALUE 'S'.
+             88 NO-FIN-CURSOR             VALUE 'N'.
+      *
+       01 WK-CONTADORES.
+          05 CONT-LEIDOS                  PIC 9(3).
+      *---------------- SQLCA ---------------------------------
+           EXEC SQL
+               INCLUDE SQLCA
+           END-EXEC.
+      *---------------- DCLGEN --------------------------------
+           EXEC SQL
+               INCLUDE TBCLPEPS
+           END-EXEC.
+      *
+      *---------------- CURSORES ------------------------------
+           EXEC SQL
+               DECLARE CURSOR-LISTA CURSOR FOR
+                  SELECT DNI_CL
+                        ,NOMBRE_CL
+                        ,APELLIDO_1
+                        ,APELLIDO_2
+                        ,CLASE_VIA
+                        ,NOMBRE_VIA
+                        ,NUMERO_VIA
+                        ,COD_POSTAL
+                        ,CIUDAD
+                        ,TELEFONO
+                        ,OBSERVACIONES
+                   FROM CLIENTES_PEPITO_SEG
+                  ORDER BY DNI_CL
+           END-EXEC.
+      *---------------- CURSOR REPAG --------------------------
+           EXEC SQL
+               DECLARE CURSOR-REPAG CURSOR FOR
+                  SELECT DNI_CL
+                        ,NOMBRE_CL
+                        ,APELLIDO_1
+                        ,APELLIDO_2
+                        ,CLASE_VIA
+                        ,NOMBRE_VIA
+                        ,NUMERO_VIA
+                        ,COD_POSTAL
+                        ,CIUDAD
+                        ,TELEFONO
+                        ,OBSERVACIONES
+                   FROM CLIENTES_PEPITO_SEG
+                  WHERE DNI_CL > :TB-DNI-CL
+                  ORDER BY DNI_CL
+           END-EXEC.
+      *
+      ******************************************************************
+      *        L I N K A G E    S E C T I O N
+      ******************************************************************
+       LINKAGE SECTION.
+      *
+       01 CPYCOM1.
+          05 ENTRADA.
+             10 OPCION                  PIC X(01).
+             10 NUM-ELEM-E              PIC 9(03).
+          05 REPAGINACION.
+             10 DNI-CL-REP              PIC X(09).
+          05 SALIDA.
+             10 SALIDA-TB OCCURS 3.
+                15 DNI-CL-S           PIC X(9).
+                15 NOMBRE-CL-S        PIC X(25).
+                15 APELLIDO-1-S       PIC X(25).
+                15 APELLIDO-2-S       PIC X(25).
+                15 CLASE-VIA-S        PIC X(25).
+                15 NOMBRE-VIA-S       PIC X(55).
+                15 NUMERO-VIA-S       PIC S9(9).
+                15 COD-POSTAL-S       PIC X(5).
+                15 CIUDAD-S           PIC X(25).
+                15 TELEFONO-S         PIC X(10).
+                15 OBSERVACIONES-S    PIC X(255).
+          05 SALIDA-CONTROL.
+             10 MAS-DATOS                  PIC X(01).
+             10 NUM-ELEM-S                 PIC 9(03).
+          05 ERRORES.
+             10 RETORNO                    PIC X(02).
+             10 SUBRETORNO                 PIC X(02).
+             10 ACCION                     PIC X(20).
+             10 TABLA                      PIC X(20).
+             10 PARRAFO                    PIC X(20).
+             10 NOMRUTINA                  PIC X(08).
+             10 SQLCODE-E                  PIC S9(04).
+      *
+      ******************************************************************
+      *        P R O C E D U R E     D I V I S I O N
+      ******************************************************************
+       PROCEDURE DIVISION USING CPYCOM1.
+      *
+           PERFORM 1000-INICIO
+              THRU 1000-INICIO-EXIT
+      *
+           PERFORM 2000-PROCESO
+              THRU 2000-PROCESO-EXIT
+      *
+           PERFORM 3000-FIN
+              THRU 3000-FIN-EXIT.
+      *
+      ******************************************************************
+      *   1000-INICIO
+      ******************************************************************
+       1000-INICIO.
+      *
+           INITIALIZE SALIDA
+                      ERRORES
+                      SALIDA-CONTROL
+                      DCLCLIENTES-PEPITO-SEG
+      *
+           MOVE CA-00                TO RETORNO
+           MOVE 1                    TO CONT-LEIDOS
+           MOVE CA-S                 TO MAS-DATOS
+      *
+           SET NO-FIN-CURSOR         TO TRUE
+      *-- VALIDACION DE LOS CAMPOS DE ENTRADA
+           PERFORM 1100-VALIDAR-OPCION
+              THRU 1100-VALIDAR-OPCION-EXIT
+      *
+           PERFORM 1200-VALIDAR-NUM-ELEM-E
+              THRU 1200-VALIDAR-NUM-ELEM-E-EXIT
+      *
+           .
+       1000-INICIO-EXIT.
+           EXIT.
+      ******************************************************************
+      *   1100-VALIDAR-OPCION
+      ******************************************************************
+       1100-VALIDAR-OPCION.
+      *
+           IF OPCION NOT EQUAL CA-L
+           AND OPCION NOT EQUAL CA-R
+              MOVE CA-10               TO RETORNO
+              MOVE CA-11               TO SUBRETORNO
+              MOVE CA-ACC-VALIDA       TO ACCION
+              MOVE SPACES              TO TABLA
+              MOVE CA-PARR-VALOP       TO PARRAFO
+              MOVE CA-PGM              TO NOMRUTINA
+
+              PERFORM 3000-FIN
+                 THRU 3000-FIN-EXIT
+
+           END-IF
+      *
+           .
+       1100-VALIDAR-OPCION-EXIT.
+           EXIT.
+      ******************************************************************
+      *   1200-VALIDAR-NUM-ELEM-E
+      ******************************************************************
+       1200-VALIDAR-NUM-ELEM-E.
+      *
+           IF NUM-ELEM-E < 0
+
+              MOVE CA-10               TO RETORNO
+              MOVE CA-01               TO SUBRETORNO
+              MOVE CA-ACC-VALIDA       TO ACCION
+              MOVE SPACES              TO TABLA
+              MOVE CA-PARR-VALNE       TO PARRAFO
+              MOVE CA-PGM              TO NOMRUTINA
+
+              PERFORM 3000-FIN
+                 THRU 3000-FIN-EXIT
+
+           END-IF
+      *
+           .
+       1200-VALIDAR-NUM-ELEM-E-EXIT.
+           EXIT.
+      ******************************************************************
+      *   2000-PROCESO
+      ******************************************************************
+       2000-PROCESO.
+      *
+           EVALUATE OPCION
+               WHEN CA-L
+                    PERFORM 2100-ABRIR-CURSOR-LISTA
+                       THRU 2100-ABRIR-CURSOR-LISTA-EXIT
+
+                    PERFORM 2200-LEER-CURSOR-LISTA
+                       THRU 2200-LEER-CURSOR-LISTA-EXIT
+                      UNTIL CONT-LEIDOS > NUM-ELEM-E
+                         OR SI-FIN-CURSOR
+
+                    PERFORM 2300-CERRAR-CURSOR-LISTA
+                       THRU 2300-CERRAR-CURSOR-LISTA-EXIT
+
+               WHEN CA-R
+                    MOVE DNI-CL-REP          TO TB-DNI-CL
+
+                    PERFORM 2400-ABRIR-CURSOR-REPAG
+                       THRU 2400-ABRIR-CURSOR-REPAG-EXIT
+
+                    PERFORM 2500-LEER-CURSOR-REPAG
+                       THRU 2500-LEER-CURSOR-REPAG-EXIT
+                      UNTIL CONT-LEIDOS > NUM-ELEM-E
+                         OR SI-FIN-CURSOR
+
+                    PERFORM 2600-CERRAR-CURSOR-REPAG
+                       THRU 2600-CERRAR-CURSOR-REPAG-EXIT
+
+
+
+           END-EVALUATE
+      *
+           .
+       2000-PROCESO-EXIT.
+           EXIT.
+      ******************************************************************
+      *   2100-ABRIR-CURSOR-LISTA
+      ******************************************************************
+       2100-ABRIR-CURSOR-LISTA.
+      *
+           EXEC SQL
+               OPEN CURSOR-LISTA
+           END-EXEC.
+      *
+           EVALUATE SQLCODE
+               WHEN 0
+                    CONTINUE
+
+               WHEN OTHER
+                    MOVE CA-99               TO RETORNO
+                    MOVE CA-99               TO SUBRETORNO
+                    MOVE CA-ACC-OPEN         TO ACCION
+                    MOVE CA-TABLA            TO TABLA
+                    MOVE CA-PARR-ABRCL       TO PARRAFO
+                    MOVE CA-PGM              TO NOMRUTINA
+                    MOVE SQLCODE             TO SQLCODE-E
+
+                    PERFORM 3000-FIN
+                       THRU 3000-FIN-EXIT
+
+           END-EVALUATE
+      *
+           .
+      *
+       2100-ABRIR-CURSOR-LISTA-EXIT.
+           EXIT.
+      ******************************************************************
+      *   2200-LEER-CURSOR-LISTA
+      ******************************************************************
+       2200-LEER-CURSOR-LISTA.
+      *
+           EXEC SQL
+               FETCH CURSOR-LISTA
+                INTO :TB-DNI-CL
+                    ,:TB-NOMBRE-CL
+                    ,:TB-APELLIDO-1
+                    ,:TB-APELLIDO-2
+                    ,:TB-CLASE-VIA
+                    ,:TB-NOMBRE-VIA
+                    ,:TB-NUMERO-VIA
+                    ,:TB-COD-POSTAL
+                    ,:TB-CIUDAD
+                    ,:TB-TELEFONO
+                    ,:TB-OBSERVACIONES
+           END-EXEC.
+      *
+           EVALUATE SQLCODE
+               WHEN 0
+                    IF CONT-LEIDOS <= NUM-ELEM-E
+                       PERFORM 2250-INFORMAR-SALIDA
+                          THRU 2250-INFORMAR-SALIDA-EXIT
+                    END-IF
+
+               WHEN 100
+                    SET SI-FIN-CURSOR        TO TRUE
+                    MOVE CA-N                TO MAS-DATOS
+
+               WHEN OTHER
+                    MOVE CA-99               TO RETORNO
+                    MOVE CA-99               TO SUBRETORNO
+                    MOVE CA-ACC-FETCH        TO ACCION
+                    MOVE CA-TABLA            TO TABLA
+                    MOVE CA-PARR-LEECL       TO PARRAFO
+                    MOVE CA-PGM              TO NOMRUTINA
+                    MOVE SQLCODE             TO SQLCODE-E
+
+                    PERFORM 3000-FIN
+                       THRU 3000-FIN-EXIT
+
+           END-EVALUATE
+      *
+           .
+      *
+       2200-LEER-CURSOR-LISTA-EXIT.
+           EXIT.
+      ******************************************************************
+      *   2300-CERRAR-CURSOR-LISTA
+      ******************************************************************
+       2300-CERRAR-CURSOR-LISTA.
+      *
+           EXEC SQL
+              CLOSE CURSOR-LISTA
+           END-EXEC.
+      *
+           EVALUATE SQLCODE
+               WHEN 0
+                    CONTINUE
+
+               WHEN OTHER
+                    MOVE CA-99               TO RETORNO
+                    MOVE CA-99               TO SUBRETORNO
+                    MOVE CA-ACC-CLOSE        TO ACCION
+                    MOVE CA-TABLA            TO TABLA
+                    MOVE CA-PARR-CERCL       TO PARRAFO
+                    MOVE CA-PGM              TO NOMRUTINA
+                    MOVE SQLCODE             TO SQLCODE-E
+
+                    PERFORM 3000-FIN
+                       THRU 3000-FIN-EXIT
+
+           END-EVALUATE
+      *
+           .
+      *
+       2300-CERRAR-CURSOR-LISTA-EXIT.
+           EXIT.
+      ******************************************************************
+      *   2250-INFORMAR-SALIDA
+      ******************************************************************
+       2250-INFORMAR-SALIDA.
+      *
+      *-- INFORMAR EL OCCURS DE SALIDA CON LOS DATOS DEL FETCH
+           MOVE TB-DNI-CL                 TO DNI-CL-S(CONT-LEIDOS)
+           MOVE TB-NOMBRE-CL              TO NOMBRE-CL-S(CONT-LEIDOS)
+           MOVE TB-APELLIDO-1             TO APELLIDO-1-S(CONT-LEIDOS)
+           MOVE TB-APELLIDO-2             TO APELLIDO-2-S(CONT-LEIDOS)
+           MOVE TB-CLASE-VIA              TO CLASE-VIA-S(CONT-LEIDOS)
+           MOVE TB-NOMBRE-VIA             TO NOMBRE-VIA-S(CONT-LEIDOS)
+           MOVE TB-NUMERO-VIA             TO NUMERO-VIA-S(CONT-LEIDOS)
+           MOVE TB-COD-POSTAL             TO COD-POSTAL-S(CONT-LEIDOS)
+           MOVE TB-CIUDAD                 TO CIUDAD-S(CONT-LEIDOS)
+           MOVE TB-TELEFONO               TO TELEFONO-S(CONT-LEIDOS)
+           MOVE TB-OBSERVACIONES         TO OBSERVACIONES-S(CONT-LEIDOS)
+      *-- INFORMAR DEL CAMPO/S DE REPAGINACION
+           MOVE TB-DNI-CL                 TO DNI-CL-REP
+      *-- INCREMENTAMOS CONTADORES
+           ADD 1                          TO CONT-LEIDOS
+           ADD 1                          TO NUM-ELEM-S
+      *
+           .
+      *
+       2250-INFORMAR-SALIDA-EXIT.
+           EXIT.
+      ******************************************************************
+      *   2400-ABRIR-CURSOR-REPAG
+      ******************************************************************
+       2400-ABRIR-CURSOR-REPAG.
+      *
+           EXEC SQL
+               OPEN CURSOR-REPAG
+           END-EXEC.
+      *
+           EVALUATE SQLCODE
+               WHEN 0
+                    CONTINUE
+
+               WHEN OTHER
+                    MOVE CA-99               TO RETORNO
+                    MOVE CA-99               TO SUBRETORNO
+                    MOVE CA-ACC-OPEN         TO ACCION
+                    MOVE CA-TABLA            TO TABLA
+                    MOVE CA-PARR-ABRCR       TO PARRAFO
+                    MOVE CA-PGM              TO NOMRUTINA
+                    MOVE SQLCODE             TO SQLCODE-E
+
+                    PERFORM 3000-FIN
+                       THRU 3000-FIN-EXIT
+
+           END-EVALUATE
+      *
+           .
+      *
+       2400-ABRIR-CURSOR-REPAG-EXIT.
+           EXIT.
+      ******************************************************************
+      *   2500-LEER-CURSOR-REPAG
+      ******************************************************************
+       2500-LEER-CURSOR-REPAG.
+      *
+           EXEC SQL
+               FETCH CURSOR-REPAG
+                INTO :TB-DNI-CL
+                    ,:TB-NOMBRE-CL
+                    ,:TB-APELLIDO-1
+                    ,:TB-APELLIDO-2
+                    ,:TB-CLASE-VIA
+                    ,:TB-NOMBRE-VIA
+                    ,:TB-NUMERO-VIA
+                    ,:TB-COD-POSTAL
+                    ,:TB-CIUDAD
+                    ,:TB-TELEFONO
+                    ,:TB-OBSERVACIONES
+           END-EXEC.
+      *
+           EVALUATE SQLCODE
+               WHEN 0
+                    IF CONT-LEIDOS <= NUM-ELEM-E
+                       PERFORM 2250-INFORMAR-SALIDA
+                          THRU 2250-INFORMAR-SALIDA-EXIT
+                    END-IF
+
+               WHEN 100
+                    SET SI-FIN-CURSOR        TO TRUE
+                    MOVE CA-N                TO MAS-DATOS
+
+               WHEN OTHER
+                    MOVE CA-99               TO RETORNO
+                    MOVE CA-99               TO SUBRETORNO
+                    MOVE CA-ACC-FETCH        TO ACCION
+                    MOVE CA-TABLA            TO TABLA
+                    MOVE CA-PARR-LEECR       TO PARRAFO
+                    MOVE CA-PGM              TO NOMRUTINA
+                    MOVE SQLCODE             TO SQLCODE-E
+
+                    PERFORM 3000-FIN
+                       THRU 3000-FIN-EXIT
+
+           END-EVALUATE
+      *
+           .
+      *
+       2500-LEER-CURSOR-REPAG-EXIT.
+           EXIT.
+      ******************************************************************
+      *   2600-CERRAR-CURSOR-REPAG
+      ******************************************************************
+       2600-CERRAR-CURSOR-REPAG.
+      *
+           EXEC SQL
+              CLOSE CURSOR-REPAG
+           END-EXEC.
+      *
+           EVALUATE SQLCODE
+               WHEN 0
+                    CONTINUE
+
+               WHEN OTHER
+                    MOVE CA-99               TO RETORNO
+                    MOVE CA-99               TO SUBRETORNO
+                    MOVE CA-ACC-CLOSE        TO ACCION
+                    MOVE CA-TABLA            TO TABLA
+                    MOVE CA-PARR-CERCR       TO PARRAFO
+                    MOVE CA-PGM              TO NOMRUTINA
+                    MOVE SQLCODE             TO SQLCODE-E
+
+                    PERFORM 3000-FIN
+                       THRU 3000-FIN-EXIT
+
+           END-EVALUATE
+      *
+           .
+      *
+       2600-CERRAR-CURSOR-REPAG-EXIT.
+           EXIT.
+      ******************************************************************
+      *   3000-FIN
+      ******************************************************************
+       3000-FIN.
+      *
+           GOBACK
+      *
+           .
+      *
+       3000-FIN-EXIT.
+           EXIT.

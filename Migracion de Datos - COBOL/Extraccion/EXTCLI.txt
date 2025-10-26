@@ -1,0 +1,302 @@
+      ******************************************************************
+      *       I D E N T I F I C A T I O N   D I V I S I O N
+      *
+      * PROGRAMA ENCARGADO DE EXTRAER LOS DATOS DE LA TABLA:
+      *                   CLIENTES_PEPITO_SEG
+      * LLEVA INCORPORADO UNA RUTINA CON REPAGINACION PARA EL PROCESO
+      *
+      ******************************************************************
+       IDENTIFICATION DIVISION.
+      *
+       PROGRAM-ID.    EXTCLI.
+       AUTHOR.        JOAQUIN ALPANYEZ LOPEZ.
+       DATE-WRITTEN.  11/09/2023.
+       DATE-COMPILED. 11/09/2023.
+      *
+      ******************************************************************
+      *       E N V I R O N M E N T     D I V I S I O N
+      ******************************************************************
+       ENVIRONMENT DIVISION.
+      *
+       CONFIGURATION SECTION.
+         SOURCE-COMPUTER.  IBM-3090.
+         OBJECT-COMPUTER.  IBM-3090.
+      *
+       SPECIAL-NAMES.
+           DECIMAL-POINT IS COMMA.
+      *
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT FSALIDA
+               ASSIGN TO SALIDA
+               FILE STATUS IS FS-FSALIDA.
+      *
+      ******************************************************************
+      *                D A T A      D I V I S I O N
+      ******************************************************************
+       DATA DIVISION.
+      *
+       FILE SECTION.
+      *
+      ******************************************************************
+      *        F I L E     S E C T I O N
+      ******************************************************************
+      *
+       FD  FSALIDA
+           BLOCK CONTAINS 0 RECORDS
+           LABEL RECORD ARE STANDARD
+           RECORDING MODE IS F
+           DATA RECORD IS REG-SAL.
+
+       01  REG-SAL            PIC X(468).
+      *
+      ******************************************************************
+      *        W O R K I N G    S T O R A G E
+      ******************************************************************
+       WORKING-STORAGE SECTION.
+      ******************************************************************
+      **********************-CONSTANTES-********************************
+       01 CA-CONSTANTES-ALF.
+          05 CA-PGM                       PIC X(08) VALUE 'EXTCLI'.
+          05 CA-RUT                       PIC X(08) VALUE 'EXTRCLI'.
+          05 CA-00                        PIC X(02) VALUE '00'.
+          05 CA-L                         PIC X(01) VALUE 'L'.
+          05 CA-R                         PIC X(01) VALUE 'R'.
+          05 CA-N                         PIC X(01) VALUE 'N'.
+      *********************-VARIABLES-**********************************
+       01 FS-FILESTATUS.
+          05 FS-FSALIDA                   PIC X(02).
+      *
+       01 CONTADORES.
+          05 WK-REG-RECUPERADOS           PIC 9(03).
+          05 WK-REG-LLAMADAS              PIC 9(03).
+          05 WK-ESCRITOS                  PIC 9(03).
+      *************************-ESTRUCTURAS-****************************
+       01 WK-SALIDA.
+          05 DNI-CL-SS          PIC X(9).
+          05 NOMBRE-CL-SS       PIC X(25).
+          05 APELLIDO-1-SS      PIC X(25).
+          05 APELLIDO-2-SS      PIC X(25).
+          05 CLASE-VIA-SS       PIC X(25).
+          05 NOMBRE-VIA-SS      PIC X(55).
+          05 NUMERO-VIA-SS      PIC S9(9).
+          05 COD-POSTAL-SS      PIC X(5).
+          05 CIUDAD-SS          PIC X(25).
+          05 TELEFONO-SS        PIC X(10).
+          05 OBSERVACIONES-SS   PIC X(255).
+      *
+       01 CPYCOM1.
+          05 ENTRADA.
+             10 OPCION                  PIC X(01).
+             10 NUM-ELEM-E              PIC 9(03).
+          05 REPAGINACION.
+             10 DNI-CL-REP              PIC X(09).
+          05 SALIDA.
+             10 SALIDA-TB OCCURS 3.
+                15 DNI-CL-S           PIC X(9).
+                15 NOMBRE-CL-S        PIC X(25).
+                15 APELLIDO-1-S       PIC X(25).
+                15 APELLIDO-2-S       PIC X(25).
+                15 CLASE-VIA-S        PIC X(25).
+                15 NOMBRE-VIA-S       PIC X(55).
+                15 NUMERO-VIA-S       PIC S9(9).
+                15 COD-POSTAL-S       PIC X(5).
+                15 CIUDAD-S           PIC X(25).
+                15 TELEFONO-S         PIC X(10).
+                15 OBSERVACIONES-S    PIC X(255).
+          05 SALIDA-CONTROL.
+             10 MAS-DATOS                  PIC X(01).
+             10 NUM-ELEM-S                 PIC 9(03).
+          05 ERRORES.
+             10 RETORNO                    PIC X(02).
+             10 SUBRETORNO                 PIC X(02).
+             10 ACCION                     PIC X(20).
+             10 TABLA                      PIC X(20).
+             10 PARRAFO                    PIC X(20).
+             10 NOMRUTINA                  PIC X(08).
+             10 SQLCODE-E                  PIC S9(04).
+      *
+
+      ***********************-SWITCHES-*********************************
+      *
+       01 WK-SQLCODE                      PIC -999.
+       01 WK-INDICES.
+          05 IND                          PIC 9(03).
+      *
+       01 SWITCHES.
+          05 SW-ERROR                     PIC X(01) VALUE 'N'.
+             88 SI-ERROR                            VALUE 'S'.
+             88 NO-ERROR                            VALUE 'N'.
+      *
+      ******************************************************************
+      *        P R O C E D U R E     D I V I S I O N
+      ******************************************************************
+       PROCEDURE DIVISION.
+      *
+           PERFORM 1000-INICIO
+              THRU 1000-INICIO-EXIT
+
+           PERFORM 2000-PROCESO
+              THRU 2000-PROCESO-EXIT
+             UNTIL MAS-DATOS = CA-N
+
+           PERFORM 3000-FIN
+              THRU 3000-FIN-EXIT.
+
+      *
+      ******************************************************************
+      *   1000-INICIO
+      ******************************************************************
+       1000-INICIO.
+      *
+           INITIALIZE WK-SALIDA
+                      FS-FILESTATUS
+                      CONTADORES
+                      CPYCOM1
+      *
+           SET NO-ERROR                 TO TRUE
+      *
+           PERFORM 1100-ABRIR-SALIDA
+              THRU 1100-ABRIR-SALIDA-EXIT
+      *
+           MOVE CA-L                    TO OPCION
+           MOVE 3                       TO NUM-ELEM-E
+      *
+           .
+       1000-INICIO-EXIT.
+           EXIT.
+      ******************************************************************
+      *   1100-ABRIR-SALIDA
+      ******************************************************************
+       1100-ABRIR-SALIDA.
+      *
+           OPEN OUTPUT FSALIDA
+      *
+           IF FS-FSALIDA = CA-00
+              CONTINUE
+           ELSE
+              SET SI-ERROR          TO TRUE
+
+              PERFORM 3000-FIN
+                 THRU 3000-FIN-EXIT
+           END-IF
+      *
+           .
+       1100-ABRIR-SALIDA-EXIT.
+           EXIT.
+      ******************************************************************
+      *   2000-PROCESO
+      ******************************************************************
+       2000-PROCESO.
+      *
+           PERFORM 2100-LLAMAR-RUTINA
+              THRU 2100-LLAMAR-RUTINA-EXIT
+      *
+           PERFORM 2150-INFORMAR-SALIDA
+              THRU 2150-INFORMAR-SALIDA-EXIT
+      *
+           MOVE CA-R                 TO OPCION
+      *
+           .
+       2000-PROCESO-EXIT.
+           EXIT.
+      ******************************************************************
+      *   2100-LLAMAR-RUTINA
+      ******************************************************************
+       2100-LLAMAR-RUTINA.
+      *
+           CALL CA-RUT USING CPYCOM1
+      *
+           EVALUATE RETORNO
+              WHEN CA-00
+                   ADD 1             TO WK-REG-LLAMADAS
+                   ADD NUM-ELEM-S    TO WK-REG-RECUPERADOS
+              WHEN OTHER
+                   DISPLAY RETORNO
+                   DISPLAY SUBRETORNO
+                   DISPLAY ACCION
+                   DISPLAY TABLA
+                   DISPLAY PARRAFO
+                   DISPLAY NOMRUTINA
+                   DISPLAY SQLCODE-E
+
+                   PERFORM 3000-FIN
+                      THRU 3000-FIN-EXIT
+
+           END-EVALUATE
+      *
+           .
+       2100-LLAMAR-RUTINA-EXIT.
+           EXIT.
+      ******************************************************************
+      *   2150-INFORMAR-SALIDA
+      ******************************************************************
+       2150-INFORMAR-SALIDA.
+      *
+           INITIALIZE WK-SALIDA
+      *
+           PERFORM VARYING IND FROM 1 BY 1
+              UNTIL IND > NUM-ELEM-S
+      *
+           MOVE SALIDA-TB(IND)           TO WK-SALIDA
+      *
+                  PERFORM 2200-ESCRIBIR-SALIDA
+                     THRU 2200-ESCRIBIR-SALIDA-EXIT
+
+           END-PERFORM
+      *
+           .
+       2150-INFORMAR-SALIDA-EXIT.
+           EXIT.
+      ******************************************************************
+      *   2200-ESCRIBIR-SALIDA
+      ******************************************************************
+       2200-ESCRIBIR-SALIDA.
+      *
+           WRITE REG-SAL  FROM WK-SALIDA
+      *
+           IF FS-FSALIDA = CA-00
+              INITIALIZE WK-SALIDA
+              ADD 1               TO WK-ESCRITOS
+           ELSE
+              SET SI-ERROR        TO TRUE
+
+              PERFORM 3000-FIN
+                 THRU 3000-FIN-EXIT
+           END-IF
+      *
+           .
+       2200-ESCRIBIR-SALIDA-EXIT.
+           EXIT.
+      ******************************************************************
+      *   3000-FIN
+      ******************************************************************
+       3000-FIN.
+      *
+           PERFORM 3100-CERRAR-FICHEROS
+              THRU 3100-CERRAR-FICHEROS-EXIT
+      *
+           IF NO-ERROR
+              CONTINUE
+           ELSE
+              DISPLAY 'ERROR GRAVE'
+           END-IF
+      *
+           STOP RUN
+           .
+       3000-FIN-EXIT.
+           EXIT.
+      ******************************************************************
+      *   3100-CERRAR-FICHEROS
+      ******************************************************************
+       3100-CERRAR-FICHEROS.
+      *
+           CLOSE FSALIDA
+      *
+           IF FS-FSALIDA NOT = CA-00
+              SET SI-ERROR TO TRUE
+           END-IF
+      *
+           .
+       3100-CERRAR-FICHEROS-EXIT.
+           EXIT.

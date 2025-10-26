@@ -1,0 +1,237 @@
+      ******************************************************************
+      *       I D E N T I FI C A T I O N   D I V I S I O N
+      *   RUTINA PARA SACAR TABLA DE AGENTES PARA PROGRAMA 'TRASEGM'
+      ******************************************************************
+       IDENTIFICATION DIVISION.
+      *
+       PROGRAM-ID.    RUTAGEN.
+       AUTHOR.        JOAQUIN ALPANYEZ LOPEZ.
+       DATE-WRITTEN.  19/09/2023.
+       DATE-COMPILED. 19/09/2023.
+      *
+      ******************************************************************
+      *       E N V I R O N M E N T     D I V I S I O N
+      ******************************************************************
+       ENVIRONMENT DIVISION.
+      *
+       CONFIGURATION SECTION.
+         SOURCE-COMPUTER.  IBM-3090.
+         OBJECT-COMPUTER.  IBM-3090.
+      *
+       SPECIAL-NAMES.
+           DECIMAL-POINT IS COMMA.
+      *
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+      ******************************************************************
+      *                D A T A      D I V I S I O N
+      ******************************************************************
+       DATA DIVISION.
+      *
+       FILE SECTION.
+      *
+      ******************************************************************
+      *        F I L E     S E C T I O N
+      ******************************************************************
+      *
+      ******************************************************************
+      *        W O R K I N G    S T O R A G E
+      ******************************************************************
+       WORKING-STORAGE SECTION.
+      **********************-CONSTANTES-********************************
+       01 CA-CONSTANTES-ALF.
+          05 CA-PGM                       PIC X(08) VALUE 'RUTAGEN'.
+          05 CA-00                        PIC X(02) VALUE '00'.
+          05 CA-10                        PIC X(02) VALUE '10'.
+          05 CA-SI                        PIC X(2)  VALUE 'SI'.
+          05 CA-NO                        PIC X(2)  VALUE 'NO'.
+      **********************-TABLA-*************************************
+       01 CPYCOMAGE.
+          05 ENTRADA.
+             10 NUM-ALE-SS                PIC 9(01).
+          05 SALIDA OCCURS 9 TIMES.
+             10 NUM-AGE-SS                PIC X(09).
+             10 DNI-AGE-SS                PIC X(09).
+             10 NOMBRE-AGE-SS             PIC X(25).
+             10 APE1-AGE-SS               PIC X(25).
+             10 APE2-AGE-SS               PIC X(25).
+             10 TLFN-AGE-SS               PIC X(10).
+          05 ERRORES.
+             10 RETORNO-SS                PIC X(02).
+             10 SUBRETORNO-SS             PIC X(02).
+             10 TABLA-SS                  PIC X(20).
+             10 PARRAFO-SS                PIC X(30).
+             10 ACCION-SS                 PIC X(10).
+             10 SQLCODE-SS                PIC S9(04) COMP.
+             10 RUTINA-SS                 PIC X(08).
+      *********************-INDICES-************************************
+       01 TB-IND                          PIC 9(01).
+      ******************************************************************
+       LINKAGE SECTION.
+      ****************-ESTRUCTURACOMUNICACIONPROGRAMA-******************
+       01 CPYCOMSS2.
+             10 NUM-ALE-SS2               PIC 9(01).
+             10 NUM-AGE-SS2               PIC X(09).
+             10 DNI-AGE-SS2               PIC X(09).
+             10 NOMBRE-AGE-SS2            PIC X(25).
+             10 APE1-AGE-SS2              PIC X(25).
+             10 APE2-AGE-SS2              PIC X(25).
+             10 TLFN-AGE-SS2              PIC X(10).
+      ******************************************************************
+      *        P R O C E D U R E     D I V I S I O N
+      ******************************************************************
+       PROCEDURE DIVISION USING CPYCOMSS2.
+      *
+           PERFORM 1000-INICIO
+              THRU 1000-INICIO-EXIT
+      *
+           PERFORM 2000-PROCESO
+              THRU 2000-PROCESO-EXIT
+      *
+           PERFORM 3000-FIN
+              THRU 3000-FIN-EXIT.
+      *
+      ******************************************************************
+      *   1000-INICIO
+      ******************************************************************
+       1000-INICIO.
+      *
+               INITIALIZE
+                          ERRORES
+      *
+               MOVE CA-00 TO RETORNO-SS
+      *
+               PERFORM 1100-VALIDAR-ENTRADA
+                  THRU 1100-VALIDAR-ENTRADA-EXIT
+      *
+               PERFORM 9300-INFORMAR-TABLA
+                  THRU 9300-INFORMAR-TABLA-EXIT
+      *
+           .
+       1000-INICIO-EXIT.
+           EXIT.
+      ******************************************************************
+       9300-INFORMAR-TABLA.
+      *
+                MOVE '000000001' TO NUM-AGE-SS(1)
+                MOVE '000000002' TO NUM-AGE-SS(2)
+                MOVE '000000003' TO NUM-AGE-SS(3)
+                MOVE '000000004' TO NUM-AGE-SS(4)
+                MOVE '000000005' TO NUM-AGE-SS(5)
+                MOVE '000000006' TO NUM-AGE-SS(6)
+                MOVE '000000007' TO NUM-AGE-SS(7)
+                MOVE '000000008' TO NUM-AGE-SS(8)
+                MOVE '000000009' TO NUM-AGE-SS(9)
+
+      ***
+                MOVE '12345678A' TO DNI-AGE-SS(1)
+                MOVE '12245678S' TO DNI-AGE-SS(2)
+                MOVE '12325678D' TO DNI-AGE-SS(3)
+                MOVE '12342678F' TO DNI-AGE-SS(4)
+                MOVE '12345278G' TO DNI-AGE-SS(5)
+                MOVE '12345628H' TO DNI-AGE-SS(6)
+                MOVE '12345672J' TO DNI-AGE-SS(7)
+                MOVE '12245678K' TO DNI-AGE-SS(8)
+                MOVE '12325678L' TO DNI-AGE-SS(9)
+      ***
+                MOVE 'JOAQUIN1' TO NOMBRE-AGE-SS(1)
+                MOVE 'JOAQUIN2' TO NOMBRE-AGE-SS(2)
+                MOVE 'JOAQUIN3' TO NOMBRE-AGE-SS(3)
+                MOVE 'JOAQUIN4' TO NOMBRE-AGE-SS(4)
+                MOVE 'JOAQUIN5' TO NOMBRE-AGE-SS(5)
+                MOVE 'JOAQUIN6' TO NOMBRE-AGE-SS(6)
+                MOVE 'JOAQUIN7' TO NOMBRE-AGE-SS(7)
+                MOVE 'JOAQUIN8' TO NOMBRE-AGE-SS(8)
+                MOVE 'JOAQUIN9' TO NOMBRE-AGE-SS(9)
+      ***
+                MOVE 'LOPEZ1' TO APE1-AGE-SS(1)
+                MOVE 'LOPEZ2' TO APE1-AGE-SS(2)
+                MOVE 'LOPEZ3' TO APE1-AGE-SS(3)
+                MOVE 'LOPEZ4' TO APE1-AGE-SS(4)
+                MOVE 'LOPEZ5' TO APE1-AGE-SS(5)
+                MOVE 'LOPEZ6' TO APE1-AGE-SS(6)
+                MOVE 'LOPEZ7' TO APE1-AGE-SS(7)
+                MOVE 'LOPEZ8' TO APE1-AGE-SS(8)
+                MOVE 'LOPEZ9' TO APE1-AGE-SS(9)
+      ***
+                MOVE 'LOPEZ9' TO APE2-AGE-SS(1)
+                MOVE 'LOPEZ8' TO APE2-AGE-SS(2)
+                MOVE 'LOPEZ7' TO APE2-AGE-SS(3)
+                MOVE 'LOPEZ6' TO APE2-AGE-SS(4)
+                MOVE 'LOPEZ5' TO APE2-AGE-SS(5)
+                MOVE 'LOPEZ4' TO APE2-AGE-SS(6)
+                MOVE 'LOPEZ3' TO APE2-AGE-SS(7)
+                MOVE 'LOPEZ2' TO APE2-AGE-SS(8)
+                MOVE 'LOPEZ1' TO APE2-AGE-SS(9)
+      ***
+                MOVE '1111111111' TO TLFN-AGE-SS(1)
+                MOVE '2222222222' TO TLFN-AGE-SS(2)
+                MOVE '3333333333' TO TLFN-AGE-SS(3)
+                MOVE '4444444444' TO TLFN-AGE-SS(4)
+                MOVE '5555555555' TO TLFN-AGE-SS(5)
+                MOVE '6666666666' TO TLFN-AGE-SS(6)
+                MOVE '7777777777' TO TLFN-AGE-SS(7)
+                MOVE '8888888888' TO TLFN-AGE-SS(8)
+                MOVE '9999999999' TO TLFN-AGE-SS(9)
+      *
+              .
+       9300-INFORMAR-TABLA-EXIT.
+                EXIT.
+      ******************************************************************
+       1100-VALIDAR-ENTRADA.
+      *
+                   IF NUM-ALE-SS2 EQUAL TO SPACES OR LOW-VALUES
+      *
+                      MOVE '88'                   TO RETORNO-SS
+                      MOVE 'ENTRADA VACIA'        TO TABLA-SS
+                      MOVE '1100-VALIDAR-ENTRADA' TO PARRAFO-SS
+                      MOVE 'SEL AGENTE'           TO ACCION-SS
+                      MOVE  CA-PGM                TO RUTINA-SS
+      *
+                      DISPLAY ERRORES
+      *
+                   ELSE
+      *
+                      MOVE '00'                   TO RETORNO-SS
+                      MOVE 'ENTRADA CORRECTA'     TO TABLA-SS
+                      MOVE '1100-VALIDAR-ENTRADA' TO PARRAFO-SS
+                      MOVE 'INT AGENTE'           TO ACCION-SS
+                      MOVE  CA-PGM                TO RUTINA-SS
+      *
+                      DISPLAY ERRORES
+      *
+                   END-IF
+      *
+                .
+       1100-VALIDAR-ENTRADA-EXIT.
+               EXIT.
+      ******************************************************************
+      *   2000-PROCESO
+      ******************************************************************
+       2000-PROCESO.
+      *
+                      MOVE NUM-ALE-SS2 TO TB-IND
+      *
+                      MOVE NUM-AGE-SS(TB-IND)    TO NUM-AGE-SS2
+                      MOVE DNI-AGE-SS(TB-IND)    TO DNI-AGE-SS2
+                      MOVE NOMBRE-AGE-SS(TB-IND) TO NOMBRE-AGE-SS2
+                      MOVE APE1-AGE-SS(TB-IND)   TO APE1-AGE-SS2
+                      MOVE APE2-AGE-SS(TB-IND)   TO APE2-AGE-SS2
+                      MOVE TLFN-AGE-SS(TB-IND)   TO TLFN-AGE-SS2
+      *
+           .
+       2000-PROCESO-EXIT.
+           EXIT.
+      ******************************************************************
+      **************************************************************
+      *   3000-FIN
+      ******************************************************************
+       3000-FIN.
+      *
+           GOBACK
+      *
+           .
+      *
+       3000-FIN-EXIT.
+           EXIT.
+      ******************************************************************

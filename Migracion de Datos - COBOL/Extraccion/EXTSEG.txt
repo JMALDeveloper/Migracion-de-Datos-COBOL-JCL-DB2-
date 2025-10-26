@@ -1,0 +1,318 @@
+      ******************************************************************
+      *       I D E N T I F I C A T I O N   D I V I S I O N
+      *
+      * PROGRAMA PARA DESCARGAR TABLA SEGUROS_PEPITO_SEG
+      *
+      ******************************************************************
+       IDENTIFICATION DIVISION.
+      *
+       PROGRAM-ID.    EXTSEG.
+       AUTHOR.        JOAQUIN ALPANYEZ LOPEZ.
+       DATE-WRITTEN.  11/09/2023.
+       DATE-COMPILED. 11/09/2023.
+      *
+      ******************************************************************
+      *       E N V I R O N M E N T     D I V I S I O N
+      ******************************************************************
+       ENVIRONMENT DIVISION.
+      *
+       CONFIGURATION SECTION.
+         SOURCE-COMPUTER.  IBM-3090.
+         OBJECT-COMPUTER.  IBM-3090.
+      *
+       SPECIAL-NAMES.
+           DECIMAL-POINT IS COMMA.
+      *
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT FSALIDA
+               ASSIGN TO SALIDA
+               FILE STATUS IS FS-FSALIDA.
+      *
+      ******************************************************************
+      *                D A T A      D I V I S I O N
+      ******************************************************************
+       DATA DIVISION.
+      *
+       FILE SECTION.
+      *
+      ******************************************************************
+      *        F I L E     S E C T I O N
+      ******************************************************************
+       FD  FSALIDA
+           BLOCK CONTAINS 0 RECORDS
+           LABEL RECORD ARE STANDARD
+           RECORDING MODE IS F
+           DATA RECORD IS REG-SAL.
+
+       01  REG-SAL            PIC X(550).
+      *
+      ******************************************************************
+      *        W O R K I N G    S T O R A G E
+      ******************************************************************
+       WORKING-STORAGE SECTION.
+      ******************************-CONSTANTES-************************
+       01 CA-CONSTANTES-ALF.
+          05 CA-PGM                       PIC X(08) VALUE 'EXTSEG'.
+          05 CA-00                        PIC X(02) VALUE '00'.
+          05 CA-10                        PIC X(02) VALUE '10'.
+      *************************-ESTRUCTURAS-****************************
+       01 CPYSAL.
+          05 NUMERO-POLIZA-S             PIC X(09).
+          05 TIPO-S                      PIC X(02).
+          05 FECHA-INICIO-S              PIC X(10).
+          05 FECHA-VENCIMIENTO-S         PIC X(10).
+          05 COND-PART-S                 PIC X(255).
+          05 OBSERVACIONES-S             PIC X(255).
+          05 DNI-CL-S                    PIC X(09).
+      ***********************-VARIABLES-********************************
+       01 WK-SQLCODE                      PIC -999.
+      *
+       01 FS-FILESTATUS.
+          05 FS-FSALIDA                   PIC X(02).
+      *
+       01 CONTADORES.
+          05 WK-ESCRITOS                  PIC 9(03).
+          05 WK-LEIDOS                    PIC 9(03).
+      ********************-SWITCHES-************************************
+       01 SWITCHES.
+          05 SW-ERROR                     PIC X(01) VALUE 'N'.
+             88 SI-ERROR                            VALUE 'S'.
+             88 NO-ERROR                            VALUE 'N'.
+      *
+         05 SW-FIN-CURSOR                 PIC X(01) VALUE 'N'.
+            88 SI-FIN-CURSOR                        VALUE 'S'.
+            88 NO-FIN-CURSOR                        VALUE 'N'.
+      **********************-TABLAS-************************************
+             EXEC SQL
+                 INCLUDE SQLCA
+             END-EXEC.
+      *
+             EXEC SQL
+                 INCLUDE TBSEGPEP
+             END-EXEC.
+      *
+             EXEC SQL
+                  DECLARE EXTSEG_CUR CURSOR FOR
+                  SELECT NUMERO_POLIZA
+                        ,TIPO
+                        ,FECHA_INICIO
+                        ,FECHA_VENCIMIENTO
+                        ,COND_PART
+                        ,OBSERVACIONES
+                        ,DNI_CL
+                  FROM SEGUROS_PEPITO_SEG
+             END-EXEC.
+      *
+      ******************************************************************
+      *        P R O C E D U R E     D I V I S I O N
+      ******************************************************************
+       PROCEDURE DIVISION.
+      *
+           PERFORM 1000-INICIO
+              THRU 1000-INICIO-EXIT
+      *
+           PERFORM 2000-PROCESO
+              THRU 2000-PROCESO-EXIT
+             UNTIL SI-FIN-CURSOR
+      *
+           PERFORM 3000-FIN
+              THRU 3000-FIN-EXIT.
+      *
+      ******************************************************************
+      *   1000-INICIO
+      ******************************************************************
+       1000-INICIO.
+      *
+                INITIALIZE DCLSEGUROS-PEPITO-SEG
+                           CONTADORES
+                           WK-SQLCODE
+                           FS-FILESTATUS
+      *
+                SET NO-ERROR TO TRUE
+                SET NO-FIN-CURSOR TO TRUE
+      *
+                PERFORM 1200-ABRIR-CURSOR
+                   THRU 1200-ABRIR-CURSOR-EXIT
+      *
+                PERFORM 1400-ABRIR-SALIDA
+                   THRU 1400-ABRIR-SALIDA-EXIT
+      *
+                PERFORM 1300-LEER-CURSOR
+                   THRU 1300-LEER-CURSOR-EXIT
+      *
+           .
+       1000-INICIO-EXIT.
+           EXIT.
+      ******************************************************************
+       1200-ABRIR-CURSOR.
+      *
+             EXEC SQL
+                  OPEN EXTSEG_CUR
+             END-EXEC
+      *
+               EVALUATE SQLCODE
+                   WHEN 0
+                        CONTINUE
+                   WHEN OTHER
+                        SET SI-ERROR TO TRUE
+                        MOVE SQLCODE TO WK-SQLCODE
+                        DISPLAY 'ERROR EN ABRIR CURSOR ' WK-SQLCODE
+                        PERFORM 3000-FIN
+                           THRU 3000-FIN-EXIT
+               END-EVALUATE
+      *
+                  .
+       1200-ABRIR-CURSOR-EXIT.
+               EXIT.
+      ******************************************************************
+       1300-LEER-CURSOR.
+      *
+              INITIALIZE DCLSEGUROS-PEPITO-SEG
+      *
+              EXEC SQL
+                 FETCH EXTSEG_CUR
+                    INTO
+                        :TB-NUMERO-POLIZA
+                       ,:TB-TIPO
+                       ,:TB-FECHA-INICIO
+                       ,:TB-FECHA-VENCIMIENTO
+                       ,:TB-COND-PART
+                       ,:TB-OBSERVACIONES
+                       ,:TB-DNI-CL
+              END-EXEC
+      *
+               EVALUATE SQLCODE
+                   WHEN 0
+                        CONTINUE
+                   WHEN 100
+                        SET SI-FIN-CURSOR TO TRUE
+                   WHEN OTHER
+                        MOVE SQLCODE TO WK-SQLCODE
+                        DISPLAY 'ERROR LEER CURSOR ' WK-SQLCODE
+                        PERFORM 3000-FIN
+                           THRU 3000-FIN-EXIT
+               END-EVALUATE
+      *
+                  .
+       1300-LEER-CURSOR-EXIT.
+                EXIT.
+      ******************************************************************
+       1400-ABRIR-SALIDA.
+      *
+              OPEN OUTPUT FSALIDA
+      *
+               IF FS-FSALIDA = CA-00
+                  CONTINUE
+               ELSE
+                  SET SI-ERROR TO TRUE
+                  PERFORM 3000-FIN
+                     THRU 3000-FIN-EXIT
+               END-IF
+      *
+              .
+       1400-ABRIR-SALIDA-EXIT.
+             EXIT.
+      ******************************************************************
+      *   2000-PROCESO
+      ******************************************************************
+       2000-PROCESO.
+      *
+                PERFORM 2600-INFORMAR-SALIDA
+                   THRU 2600-INFORMAR-SALIDA-EXIT
+      *
+                PERFORM 2400-ESCRIBIR-SALIDA
+                   THRU 2400-ESCRIBIR-SALIDA-EXIT
+      *
+                PERFORM 1300-LEER-CURSOR
+                   THRU 1300-LEER-CURSOR-EXIT
+      *
+              .
+       2000-PROCESO-EXIT.
+              EXIT.
+      **************************************************************
+       2600-INFORMAR-SALIDA.
+      *
+                 MOVE TB-NUMERO-POLIZA       TO NUMERO-POLIZA-S
+                 MOVE TB-TIPO                TO TIPO-S
+                 MOVE TB-FECHA-INICIO        TO FECHA-INICIO-S
+                 MOVE TB-FECHA-VENCIMIENTO   TO FECHA-VENCIMIENTO-S
+                 MOVE TB-COND-PART           TO COND-PART-S
+                 MOVE TB-OBSERVACIONES       TO OBSERVACIONES-S
+                 MOVE TB-DNI-CL              TO DNI-CL-S
+      *
+             .
+       2600-INFORMAR-SALIDA-EXIT.
+              EXIT.
+      **************************************************************
+       2400-ESCRIBIR-SALIDA.
+      *
+             WRITE REG-SAL FROM CPYSAL
+      *
+           IF FS-FSALIDA = CA-00
+              INITIALIZE CPYSAL
+              ADD 1 TO WK-ESCRITOS
+              CONTINUE
+           ELSE
+              SET SI-ERROR          TO TRUE
+              PERFORM 3000-FIN
+                 THRU 3000-FIN-EXIT
+      *
+           END-IF
+      *
+              .
+       2400-ESCRIBIR-SALIDA-EXIT.
+              EXIT.
+      **************************************************************
+      *   3000-FIN
+      ******************************************************************
+       3000-FIN.
+      *
+                  PERFORM 3200-CERRAR-FICHEROS
+                     THRU 3200-CERRAR-FICHEROS-EXIT
+      *
+                  PERFORM 3100-CERRAR-CURSOR
+                     THRU 3100-CERRAR-CURSOR-EXIT
+      *
+                    IF NO-ERROR
+                       CONTINUE
+                    ELSE
+                       DISPLAY 'ERROR GRAVE'
+                    END-IF
+      *
+           STOP RUN
+      *
+           .
+      *
+       3000-FIN-EXIT.
+           EXIT.
+      ******************************************************************
+       3100-CERRAR-CURSOR.
+      *
+             EXEC SQL
+                CLOSE EXTSEG_CUR
+             END-EXEC
+      *
+               EVALUATE SQLCODE
+                   WHEN 0
+                        CONTINUE
+                   WHEN OTHER
+                        MOVE SQLCODE TO WK-SQLCODE
+                        DISPLAY 'ERROR CERRAR CURSOR ' WK-SQLCODE
+               END-EVALUATE
+      *
+             .
+       3100-CERRAR-CURSOR-EXIT.
+              EXIT.
+      ******************************************************************
+       3200-CERRAR-FICHEROS.
+      *
+            CLOSE FSALIDA
+      *
+            IF FS-FSALIDA NOT = CA-00
+               SET SI-ERROR TO TRUE
+            END-IF
+      *
+              .
+       3200-CERRAR-FICHEROS-EXIT.
+              EXIT.
