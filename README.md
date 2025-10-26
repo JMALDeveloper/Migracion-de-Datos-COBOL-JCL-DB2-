@@ -113,5 +113,3 @@ Devuelve información del agente a partir del número aleatorio (`NUM-ALEA`) bas
 - Salida: `NUM-AGE`, `DNI-AGE`, `NOMBRE`, `APE-1`, `APE-2`, `TLF`
 
 ---
-
-## 🧾 Flujo General del Proceso
